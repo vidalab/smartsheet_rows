@@ -1,35 +1,24 @@
-BASE_API_URL = "https://api.smartsheet.com/2.0";
-
 var TreeView = function(options){
   var self = this;
   this.$el = options.$el;
+  this.multiple = options.multiple;
 
   this.getHomeData(function(data) {
     self.data = data;
     self.treeview = self.renderTreeView(self.$el);
   });
+
+  this.selectedSheets = [];
 }
 
 TreeView.prototype.getHomeData = function(callback) {
-  var apiToken = $('#api-key').val();
-  $.ajax({
-    url: BASE_API_URL + '/home',
-    type: 'GET',
-    beforeSend: function(xhr){
-      xhr.setRequestHeader('Authorization', 'Bearer ' + apiToken);
-      xhr.setRequestHeader('Content-Type', 'application/json')
-    },
-    success: function(data) {
-      callback(data);
-    }
-  })
+  var api = new SmartsheetApi()
+  api.send('GET', '/home', {}, callback);
 }
 
 TreeView.prototype.renderTreeView = function ($el){
   var self = this,
       homeData = this.data;
-
-  console.log(homeData);
 
   $(".treeview").unbind().removeData().jstree({
     "search": {
@@ -37,7 +26,7 @@ TreeView.prototype.renderTreeView = function ($el){
     },
     "plugins" : ["sort", "wholerow", "search"],
     'core': {
-      "multiple" : false,
+      "multiple" : self.multiple,
       'data': [
         {'text': 'Sheets', "state" : {"opened" : true }, "children": self.getTreeviewData({sheets: homeData.sheets, folders: homeData.folders})},
         {'text': 'Workspaces', "state" : {"opened" : true }, "children": self.getTreeviewData(homeData.workspaces, {icon: 'icon-workspace'}), "icon": "icon-workspace" }
@@ -46,7 +35,23 @@ TreeView.prototype.renderTreeView = function ($el){
     }
   })
   .on("changed.jstree", function (e, data) {
-    console.log(data);
+    if (data.node.data) {
+      var sheetId = data.node.data.sheetId,
+          sheetName = data.node.data.sheetName;
+      if (data.action === 'select_node') {
+        if (data.selected.length === 1) {
+          self.selectedSheets = [];
+        }
+        self.selectedSheets.push({sheetId: sheetId, sheetName: sheetName});
+      } else if (data.action === 'deselect_node') {
+        for (var i = 0; i < self.selectedSheets.length; i++) {
+          if (self.selectedSheets[i].sheetId === sheetId) {
+            self.selectedSheets.splice(i, 1);
+            break;
+          }
+        }
+      }
+    }
   })
 }
 
