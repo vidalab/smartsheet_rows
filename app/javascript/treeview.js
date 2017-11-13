@@ -9,6 +9,29 @@ var TreeView = function(options){
   });
 
   this.selectedSheets = [];
+
+  $('.search-input').unbind()
+    .keyup( function (e){
+      var keywords = $(this).val()
+      if (e.keyCode == 13 || (keywords.length == 0 && e.keyCode == 8)) {
+        self.$el.jstree(true).show_all();
+        $('.btn-search i').addClass('fa-spinner fa-spin').removeClass('fa-search');
+        _.defer(function(){ // need this to show the changes in UI
+          self.treeview.search( keywords )
+          $('.btn-search i').removeClass('fa-spinner fa-spin').addClass('fa-search');
+        })        
+      }
+      e.preventDefault()
+    })
+    
+  $('.btn-search').unbind()
+    .click( function (e) {
+      $('.btn-search i').addClass('fa-spinner fa-spin').removeClass('fa-search');
+      _.defer(function(){ // need this to show the changes in UI
+        self.treeview.search( $('.search-input').val() )
+        $('.btn-search i').removeClass('fa-spinner fa-spin').addClass('fa-search');
+      })
+    })
 }
 
 TreeView.prototype.getHomeData = function(callback) {
@@ -20,7 +43,7 @@ TreeView.prototype.renderTreeView = function ($el){
   var self = this,
       homeData = this.data;
 
-  $(".treeview").unbind().removeData().jstree({
+  self.$el.unbind().removeData().jstree({
     "search": {
       "show_only_matches": true
     },
@@ -53,6 +76,8 @@ TreeView.prototype.renderTreeView = function ($el){
       }
     }
   })
+
+  return $el.jstree(true)
 }
 
 TreeView.prototype.getTreeviewData = function(folders, options) {

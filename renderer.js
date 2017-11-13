@@ -148,6 +148,11 @@ $(document).ready(function() {
   $("head").append(s);
   
   $('#btn-select-source').on('click', function() {
+    if ($('#api-key').val() === '') {
+      $('#app-status-message').html("Please enter API key...");
+      return;
+    }
+
     $('#treeview-modal').modal('show');
 
     var treeview = new TreeView({
